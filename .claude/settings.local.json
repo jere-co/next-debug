@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 30 npm run build:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
