@@ -1,0 +1,11 @@
+module default {
+  type Post {
+    required title: str {
+      constraint exclusive;
+    }
+    required slug: str {
+      constraint exclusive;
+    }
+    index on (.slug);
+  }
+}
