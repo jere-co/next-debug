@@ -1,0 +1,9 @@
+# Findings
+- The app is still throwing `RangeError: Maximum call stack size exceeded` with the canary bits (`.next/dev/logs/next-development.log:3`), so the regression persists even after pulling in React 19.3.0-canary and Next 16.0.2-canary.2.
+- The shipped `visitAsyncNode` now uses a `Map` as expected (`node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.development.js:2042` → `2046`), so you are definitely on a build that contains commit `4f931700`.
+- However, that implementation only caches the result when it is **not** `null` (`node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.development.js:2046`). Whenever `visitAsyncNodeImpl` unwinds with `return;` (i.e. `undefined`)—for example on the guard that bails out when a prior node already supplied an aborted sequence (`node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.development.js:2061` → `2063`)—the placeholder `null` stays in the map. The next time the same async node is revisited we fall straight back to returning `null`, which is exactly the pre-fix behaviour, so circular awaited chains can still recurse indefinitely.
+
+# Suggestions
+1. Patch locally (or with `patch-package`) so that `visited.set(node, request)` runs unconditionally after `visitAsyncNodeImpl` returns, or store a dedicated sentinel to distinguish the “in progress” case from an actual `null` result. That makes `undefined` results cache correctly and breaks the cycle.
+2. Share this scenario with the React team (link it to PR facebook/react#35005). Highlight that `visitAsyncNodeImpl` still emits `undefined` and provide your reproduction so they can follow up with a second fix.
+3. Until an official patch lands, keep the existing workarounds handy (local patch, linking a main build, or temporarily downgrading Next/React) so you’re covered in CI.
