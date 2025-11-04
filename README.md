@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This repository reproduces a dev-mode `RangeError: Maximum call stack size exceeded` that we traced back to React’s `visitAsyncNode` implementation. It also includes some lightweight tooling (`instrumented.js`, `range-logger.js`) to make debugging the failure easier.
 
-## Getting Started
-
-First, run the development server:
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+
+# Re-apply the Turbopack instrumentation after installing dependencies.
+cp instrumented.js node_modules/next/dist/server/app-page-turbo.runtime.dev.js
+
+# Start the dev server (the script already preloads range-logger.js).
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Once the app compiles, load [http://localhost:3000](http://localhost:3000). When the recursive promise cycle trips the bug you’ll see:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `console.warn` output from `visitAsyncNode` every 1 000 recursive calls (these come from `instrumented.js`).
+- A detailed stack trace appended to `.next/range-error.log` (written by `range-logger.js`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+If you reinstall `next`, re-run the `cp instrumented.js …` command above—the vendored runtime will be overwritten by npm.
 
-## Learn More
+## Repository Layout
 
-To learn more about Next.js, take a look at the following resources:
+- `instrumented.js` – patched Turbopack runtime with additional logging around `visitAsyncNode`.
+- `range-logger.js` – preload script that captures RangeError stacks to `.next/range-error.log`.
+- `docs/` – background write-ups (`BUG-REPORT.md`, `ROOT-CAUSE-ANALYSIS.md`, etc.).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Typical Workflow for Collaborators
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Install dependencies and apply the instrumentation (see **Quick Start**).
+2. Run `pnpm dev` to reproduce the failure locally (the script already injects the preload).
+3. Tail `.next/range-error.log` and the terminal output to correlate the high call-count with the captured stack.
