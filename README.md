@@ -74,7 +74,7 @@ const IN_PROGRESS = Symbol.for("react.asyncTraversal.inProgress");
 function visitAsyncNode(request, task, node, visited, cutOff) {
   if (visited.has(node)) {
     const memo = visited.get(node);
-    if (memo === IN_PROGRESS) return undefined;  // Cycle detected
+    if (memo === IN_PROGRESS) return null;  // Cycle detected, no I/O on this path
     return memo;
   }
   visited.set(node, IN_PROGRESS);
@@ -83,6 +83,8 @@ function visitAsyncNode(request, task, node, visited, cutOff) {
   return result;
 }
 ```
+
+Note: We return `null` (not `undefined`) on cycle detection because `undefined` signals "abort" semantics which would skip emitting I/O info for other non-cyclic branches.
 
 ## Repository Structure
 

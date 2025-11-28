@@ -126,7 +126,7 @@ function patchFile(filePath) {
 	const pattern1 =
 		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{if\(visited\.has\(node\)\)return visited\.get\(node\);visited\.set\(node,null\);/g;
 	const replacement1 =
-		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return void 0;return memo}visited.set(node,IN_PROGRESS);";
+		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return null;return memo}visited.set(node,IN_PROGRESS);";
 
 	if (pattern1.test(content)) {
 		content = content.replace(pattern1, replacement1);
@@ -137,7 +137,7 @@ function patchFile(filePath) {
 	const pattern2 =
 		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{return visited\.has\(node\)\?visited\.get\(node\):\(visited\.set\(node,null\),/g;
 	const replacement2 =
-		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return void 0;return memo}visited.set(node,IN_PROGRESS);return(";
+		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return null;return memo}visited.set(node,IN_PROGRESS);return(";
 
 	if (pattern2.test(content)) {
 		content = content.replace(pattern2, replacement2);
