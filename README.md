@@ -1,104 +1,102 @@
-# Next.js + React visitAsyncNode Bug Fix
+# Next.js + React visitAsyncNode Bug Reproduction & Fix
 
-This repository reproduces and **fixes** a dev-mode `RangeError: Maximum call stack size exceeded` caused by React's `visitAsyncNode` implementation when using database clients like Gel/EdgeDB.
+This repository reproduces and fixes a dev-mode `RangeError: Maximum call stack size exceeded` caused by React's `visitAsyncNode` function when using database clients like Gel/EdgeDB.
 
 ## The Bug
 
-**Affected versions:** Next.js 15.5.0+ with React 19.2.0+  
-**Status:** Fix implemented, pending PR to React
+**Affected versions:** Next.js 15.5.0+ with React 19.2.0+
 
-When async Server Components call database queries (e.g., Gel's `.run()` method), React's dev-mode async tracking can enter infinite recursion due to circular promise chains.
+When async Server Components call database queries (e.g., Gel's `.run()` method), React's dev-mode async tracking enters infinite recursion due to circular promise chains.
 
-## Quick Fix for Your Project
+## Reproduce the Bug
 
-Copy `patch-visitAsyncNode.js` to your project and add to `package.json`:
+```bash
+# 1. Clone and install
+git clone https://github.com/jere-co/next-debug.git
+cd next-debug
+pnpm install --ignore-scripts   # Skip postinstall to NOT apply patch
+
+# 2. Start dev server
+pnpm dev
+
+# 3. Visit http://localhost:3000
+# You'll see: RangeError: Maximum call stack size exceeded
+```
+
+## Apply the Fix
+
+```bash
+# Apply the patch
+node patch-visitAsyncNode.cjs
+
+# Restart dev server
+pnpm dev
+
+# Visit http://localhost:3000 - page renders successfully
+```
+
+## Use the Patch in Your Project
+
+1. Copy `patch-visitAsyncNode.cjs` to your project root
+2. Add to `package.json`:
 
 ```json
 {
   "scripts": {
-    "postinstall": "node patch-visitAsyncNode.js"
+    "postinstall": "node patch-visitAsyncNode.cjs"
   }
 }
 ```
 
-Then run `pnpm install` (or npm/yarn). The patch auto-applies after each install.
+3. Run `pnpm install` (or npm/yarn)
 
-### Manual Usage
-
-```bash
-# Apply the patch
-node patch-visitAsyncNode.js
-
-# Restore original files
-node patch-visitAsyncNode.js --restore
-```
-
-## Quick Start (This Repo)
+The patch auto-applies after each install. To restore original files:
 
 ```bash
-pnpm install    # Automatically applies the patch via postinstall
-pnpm dev        # Start dev server
+node patch-visitAsyncNode.cjs --restore
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) - the page should render without RangeError.
+## The Root Cause
+
+React's `visitAsyncNode` function uses `null` as both:
+1. An "in progress" marker during traversal
+2. A valid cached result
+
+When circular async node references exist (common with database clients), revisiting a node returns `null` as if it were a cached result, causing infinite recursion.
 
 ## The Fix
 
-The bug is in React's `visitAsyncNode` function which:
-1. Uses `null` as both "currently visiting" and a valid cached result
-2. Doesn't cache `undefined` results
-3. Causes infinite recursion with circular async node references
-
-**Solution:** Use an `IN_PROGRESS` sentinel symbol and always cache results:
+Use an `IN_PROGRESS` sentinel Symbol and always cache results:
 
 ```javascript
-var IN_PROGRESS = Symbol.for("react.asyncTraversal.inProgress");
+const IN_PROGRESS = Symbol.for("react.asyncTraversal.inProgress");
 
 function visitAsyncNode(request, task, node, visited, cutOff) {
   if (visited.has(node)) {
-    var memo = visited.get(node);
-    if (memo === IN_PROGRESS) return void 0;  // Cycle detected
+    const memo = visited.get(node);
+    if (memo === IN_PROGRESS) return undefined;  // Cycle detected
     return memo;
   }
   visited.set(node, IN_PROGRESS);
-  var result = visitAsyncNodeImpl(request, task, node, visited, cutOff);
+  const result = visitAsyncNodeImpl(request, task, node, visited, cutOff);
   visited.set(node, result);  // Always cache
   return result;
 }
 ```
 
-## Repository Layout
+## Repository Structure
 
 ```
-patch-visitAsyncNode.js  - Reusable patch script (copy to your project)
-react/                   - React source with fix applied
-docs/                    - Background analysis and bug reports
+patch-visitAsyncNode.cjs  - Reusable patch script (copy to your project)
+PATCH-README.md           - Standalone docs for the patch script
+react/                    - React fork with fix applied
+docs/                     - Background analysis
   BUG-REPORT.md
   ROOT-CAUSE-ANALYSIS.md
   FINAL-ANALYSIS.md
-range-logger.js          - Debug script to capture RangeError stacks
-instrumented.js          - Instrumented runtime with logging
 ```
 
-## PR to React
+## Related Issues
 
-The fix has been implemented in `react/packages/react-server/src/ReactFlightServer.js`.
-
-To submit the PR:
-1. The fix is in the local `react/` directory
-2. Changes are minimal: ~24 lines changed in one file
-3. See `docs/` for full analysis and reproduction steps
-
-## Debugging Tools
-
-If you want to investigate further:
-
-```bash
-# Use instrumented runtime with logging
-cp instrumented.js node_modules/next/dist/server/app-page-turbo.runtime.dev.js
-
-# Check error logs
-cat .next/range-error.log
-```
-
-The `range-logger.js` preload captures RangeError stacks to `.next/range-error.log`.
+- https://github.com/vercel/next.js/issues/77065
+- https://github.com/vercel/next.js/issues/78004
