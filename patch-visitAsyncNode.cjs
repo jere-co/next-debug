@@ -115,15 +115,36 @@ function patchFile(filePath) {
 		content.slice(insertPos + 1);
 
 	// Fix the visitAsyncNode function
-	// Old: if(visited.has(node))return visited.get(node);visited.set(node,null);
-	// New: if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return void 0;return memo}visited.set(node,IN_PROGRESS);
+	// Pattern 1 (Next.js 15.x / older 16.x):
+	//   if(visited.has(node))return visited.get(node);visited.set(node,null);
+	// Pattern 2 (Next.js 16.0.5+):
+	//   return visited.has(node)?visited.get(node):(visited.set(node,null),
 
-	const oldPattern =
+	let patched = false;
+
+	// Pattern 1: if-statement style
+	const pattern1 =
 		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{if\(visited\.has\(node\)\)return visited\.get\(node\);visited\.set\(node,null\);/g;
-	const newCode =
+	const replacement1 =
 		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return void 0;return memo}visited.set(node,IN_PROGRESS);";
 
-	if (!oldPattern.test(content)) {
+	if (pattern1.test(content)) {
+		content = content.replace(pattern1, replacement1);
+		patched = true;
+	}
+
+	// Pattern 2: ternary style (Next.js 16.0.5+)
+	const pattern2 =
+		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{return visited\.has\(node\)\?visited\.get\(node\):\(visited\.set\(node,null\),/g;
+	const replacement2 =
+		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return void 0;return memo}visited.set(node,IN_PROGRESS);return(";
+
+	if (pattern2.test(content)) {
+		content = content.replace(pattern2, replacement2);
+		patched = true;
+	}
+
+	if (!patched) {
 		// Restore backup since we couldn't apply the patch
 		fs.copyFileSync(backupPath, filePath);
 		fs.unlinkSync(backupPath);
@@ -133,12 +154,6 @@ function patchFile(filePath) {
 				"Could not match visitAsyncNode pattern (may be different minification)",
 		};
 	}
-
-	// Reset regex and apply
-	content = content.replace(
-		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{if\(visited\.has\(node\)\)return visited\.get\(node\);visited\.set\(node,null\);/g,
-		newCode,
-	);
 
 	// Fix result caching - ensure we always cache (including null/undefined)
 	// Old pattern: null!==<var>&&visited.set(node,<var>),<var>}

@@ -8,11 +8,11 @@ React's `visitAsyncNode` function enters infinite recursion when your app uses d
 
 ## Usage
 
-1. Copy `patch-visitAsyncNode.js` to your project root
+1. Copy `patch-visitAsyncNode.cjs` to your project root
 2. Run it after installing dependencies:
 
 ```bash
-node patch-visitAsyncNode.js
+node patch-visitAsyncNode.cjs
 ```
 
 Or add to `package.json`:
@@ -20,7 +20,7 @@ Or add to `package.json`:
 ```json
 {
   "scripts": {
-    "postinstall": "node patch-visitAsyncNode.js"
+    "postinstall": "node patch-visitAsyncNode.cjs"
   }
 }
 ```
@@ -28,7 +28,7 @@ Or add to `package.json`:
 ## Restore Original
 
 ```bash
-node patch-visitAsyncNode.js --restore
+node patch-visitAsyncNode.cjs --restore
 ```
 
 ## Requirements
