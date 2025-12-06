@@ -8,10 +8,13 @@
  * create circular promise chains.
  *
  * Bug: React's visitAsyncNode uses `null` as both "in progress" marker and
- * a valid result, and doesn't cache `undefined` results. This causes infinite
- * recursion when circular async node references exist.
+ * a valid result. When a cycle is detected and `null` is returned, callers
+ * interpret it as "continue processing" rather than "abort this branch",
+ * causing infinite recursion.
  *
- * Fix: Use an IN_PROGRESS sentinel symbol and always cache results.
+ * Fix: Use an IN_PROGRESS sentinel symbol and return `undefined` on cycle
+ * detection. In the calling code, `undefined` signals "abort this branch"
+ * while `null` means "no I/O found, continue processing".
  *
  * Usage:
  *   node patch-visitAsyncNode.js [--restore]
@@ -126,7 +129,7 @@ function patchFile(filePath) {
 	const pattern1 =
 		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{if\(visited\.has\(node\)\)return visited\.get\(node\);visited\.set\(node,null\);/g;
 	const replacement1 =
-		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return null;return memo}visited.set(node,IN_PROGRESS);";
+		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return;return memo}visited.set(node,IN_PROGRESS);";
 
 	if (pattern1.test(content)) {
 		content = content.replace(pattern1, replacement1);
@@ -137,7 +140,7 @@ function patchFile(filePath) {
 	const pattern2 =
 		/function visitAsyncNode\(request,task,node,visited,cutOff\)\{return visited\.has\(node\)\?visited\.get\(node\):\(visited\.set\(node,null\),/g;
 	const replacement2 =
-		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return null;return memo}visited.set(node,IN_PROGRESS);return(";
+		"function visitAsyncNode(request,task,node,visited,cutOff){if(visited.has(node)){var memo=visited.get(node);if(memo===IN_PROGRESS)return;return memo}visited.set(node,IN_PROGRESS);return(";
 
 	if (pattern2.test(content)) {
 		content = content.replace(pattern2, replacement2);

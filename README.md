@@ -4,7 +4,7 @@ This repository reproduces and fixes a dev-mode `RangeError: Maximum call stack 
 
 ## The Bug
 
-**Affected versions:** Next.js 15.5.0+ with React 19.2.0+
+**Affected versions:** Next.js 16.0.7+ with React 19.2.0+
 
 When async Server Components call database queries (e.g., Gel's `.run()` method), React's dev-mode async tracking enters infinite recursion due to circular promise chains.
 

@@ -34,6 +34,6 @@ node patch-visitAsyncNode.cjs --restore
 ## Requirements
 
 - Node.js
-- Next.js 15.5.0+ installed in `node_modules`
+- Next.js 16.0.7+ installed in `node_modules`
 
 Works with npm, yarn, and pnpm.
