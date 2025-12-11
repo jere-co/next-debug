@@ -31,26 +31,11 @@ const RESTORE_MODE = process.argv.includes("--restore");
 // Find Next.js installation
 function findNextModules() {
 	const nodeModules = path.join(process.cwd(), "node_modules");
+	const nextSymlink = path.join(nodeModules, "next");
 
-	// Check for pnpm structure
-	const pnpmPath = path.join(nodeModules, ".pnpm");
-	if (fs.existsSync(pnpmPath)) {
-		const dirs = fs.readdirSync(pnpmPath).filter((d) => d.startsWith("next@"));
-		if (dirs.length > 0) {
-			// Find the actual next package
-			for (const dir of dirs) {
-				const nextPath = path.join(pnpmPath, dir, "node_modules", "next");
-				if (fs.existsSync(nextPath)) {
-					return nextPath;
-				}
-			}
-		}
-	}
-
-	// Check for regular npm/yarn structure
-	const regularPath = path.join(nodeModules, "next");
-	if (fs.existsSync(regularPath)) {
-		return regularPath;
+	// Follow symlink to get the real path (works for pnpm, npm, yarn)
+	if (fs.existsSync(nextSymlink)) {
+		return fs.realpathSync(nextSymlink);
 	}
 
 	return null;
