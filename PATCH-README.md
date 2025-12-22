@@ -1,6 +1,8 @@
 # visitAsyncNode Patch
 
-Fixes the `RangeError: Maximum call stack size exceeded` bug in Next.js 15.5.0+ / React 19.2.0+.
+Fixes the `RangeError: Maximum call stack size exceeded` bug in Next.js 15.5.0+ / 16.x with React 19.2.0+.
+
+**Tested with:** Next.js 16.1.0, React 19.2.3
 
 ## The Bug
 
@@ -34,6 +36,6 @@ node patch-visitAsyncNode.cjs --restore
 ## Requirements
 
 - Node.js
-- Next.js 16.0.7+ installed in `node_modules`
+- Next.js 15.5.0+ or 16.x installed in `node_modules`
 
 Works with npm, yarn, and pnpm.

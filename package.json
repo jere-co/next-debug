@@ -16,19 +16,19 @@
 	},
 	"dependencies": {
 		"gel": "^2.2.0",
-		"next": "16.0.8",
-		"react": "19.2.1",
-		"react-dom": "19.2.1"
+		"next": "16.1.0",
+		"react": "19.2.3",
+		"react-dom": "19.2.3"
 	},
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.1.18",
-		"@types/node": "^25.0.0",
+		"@types/node": "^25.0.3",
 		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
-		"eslint": "^9.39.1",
-		"eslint-config-next": "16.0.8",
+		"eslint": "^9.39.2",
+		"eslint-config-next": "16.1.0",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3"
 	},
-	"packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd"
+	"packageManager": "pnpm@10.26.1+sha512.664074abc367d2c9324fdc18037097ce0a8f126034160f709928e9e9f95d98714347044e5c3164d65bd5da6c59c6be362b107546292a8eecb7999196e5ce58fa"
 }
