@@ -2,7 +2,7 @@
 
 Fixes the `RangeError: Maximum call stack size exceeded` bug in Next.js 15.5.0+ / 16.x with React 19.2.0+.
 
-**Tested with:** Next.js 16.1.0, React 19.2.3
+**Tested with:** Next.js 16.1.2, React 19.2.3
 
 ## The Bug
 
